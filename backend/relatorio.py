@@ -48,7 +48,7 @@ def buscar_registros(mes):
         # e continuar com os demais, sem abortar o processamento.
         for identificador in IDS_INEXISTENTES_TESTE:
             if buscar_funcionario(identificador) is not None:
-                continue  # Evita transformar um funcionário real em cenário de erro.
+                continue  
             digest = sha256(f'{ano}-{numero:02d}-{identificador}'.encode()).digest()
             dia = 1 + digest[0] % 25
             data = date(ano, numero, dia).strftime('%d/%m/%Y')

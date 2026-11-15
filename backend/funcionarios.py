@@ -1,4 +1,4 @@
-"""Fonte temporária de cadastro. Substitua buscar_funcionario por SELECT parametrizado."""
+"""Fonte temporária de cadastro"""
 FUNCIONARIOS = {
  '1042': {'id':'1042','salario_base':2400,'divisor_mensal':220,'dependentes':0,'vale_transporte_desconto':0,'outros_descontos':0,'nome':'Ana Souza'},
  '1043': {'id':'1043','salario_base':2250,'divisor_mensal':220,'dependentes':0,'vale_transporte_desconto':0,'outros_descontos':0,'nome':'Bruno Lima'},
