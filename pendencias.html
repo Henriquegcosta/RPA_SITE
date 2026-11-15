@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pendências · Pão D’Ouro RH</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- MENU LATERAL (igual em todas as páginas) -->
+    <aside>
+      <div class="brand"><i>🥖</i>Pão D’Ouro</div>
+      <nav><a href="index.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v5l4 2-1 1.7-5-2.7V7z" />
+          </svg>Registros de ponto</a><a href="folha.html"><svg viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path d="M4 4h16v4H4zm0 6h10v10H4zm12 0h4v10h-4z" />
+          </svg>Processamento da folha</a><a href="relatorios.html"><svg viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path d="M6 2h9l5 5v15H6zm8 1.5V8h4.5zM8 12h8v1.5H8zm0 4h8v1.5H8z" />
+          </svg>Relatórios</a><a href="pendencias.html" class="on"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2L1 21h22zm1 15h-2v-2h2zm0-4h-2V9h2z" />
+          </svg>Logs</a></nav>
+    </aside>
+
+    <div>
+      <!-- CABEÇALHO -->
+      <header>
+        <h1>Pendências</h1>
+        <small>Pão D’Ouro · RH</small>
+      </header>
+
+      <!-- CONTEÚDO DA PÁGINA -->
+      <main>
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h2>Histórico de operações</h2>
+            <button class="btn sm sec" id="atualizarLogs" type="button">Atualizar</button>
+          </div>
+          <p style="color:var(--muted)">Registro das exportações e demais operações executadas no sistema.</p>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Operação</th><th>Status</th><th>Mensagem</th><th>Data/Hora</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaLogs">
+                <tr><td colspan="5">Carregando logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+async function carregarLogs() {
+  const tabela = document.getElementById("tabelaLogs");
+  tabela.innerHTML = '<tr><td colspan="5">Carregando logs...</td></tr>';
+  try {
+    const resposta = await fetch("/api/logs");
+    if (!resposta.ok) throw new Error("Não foi possível consultar os logs");
+    const logs = await resposta.json();
+    tabela.replaceChildren();
+    if (!logs.length) {
+      tabela.innerHTML = '<tr><td colspan="5">Nenhuma operação registrada.</td></tr>';
+      return;
+    }
+    logs.forEach(log => {
+      const linha = document.createElement("tr");
+      [log.id, log.operacao, log.status, log.mensagem || "-", log.data_hora].forEach(valor => {
+        const celula = document.createElement("td");
+        celula.textContent = valor ?? "-";
+        linha.appendChild(celula);
+      });
+      tabela.appendChild(linha);
+    });
+  } catch (erro) {
+    tabela.innerHTML = '<tr><td colspan="5">Backend indisponível. Inicie o servidor Python.</td></tr>';
+  }
+}
+document.getElementById("atualizarLogs").addEventListener("click", carregarLogs);
+carregarLogs();
+</script>
+
+</body>
+
+</html>

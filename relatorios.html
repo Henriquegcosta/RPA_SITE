@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relatórios · Pão D’Ouro RH</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- MENU LATERAL (igual em todas as páginas) -->
+    <aside>
+      <div class="brand"><i>🥖</i>Pão D’Ouro</div>
+      <nav><a href="index.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v5l4 2-1 1.7-5-2.7V7z" />
+          </svg>Registros de ponto</a><a href="folha.html"><svg viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path d="M4 4h16v4H4zm0 6h10v10H4zm12 0h4v10h-4z" />
+          </svg>Processamento da folha</a><a href="relatorios.html" class="on"><svg viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path d="M6 2h9l5 5v15H6zm8 1.5V8h4.5zM8 12h8v1.5H8zm0 4h8v1.5H8z" />
+          </svg>Relatórios</a><a href="pendencias.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2L1 21h22zm1 15h-2v-2h2zm0-4h-2V9h2z" />
+          </svg>Logs</a></nav>
+    </aside>
+
+    <div>
+      <!-- CABEÇALHO -->
+      <header>
+        <h1>Relatórios</h1>
+        <small>Pão D’Ouro · RH</small>
+      </header>
+
+      <!-- CONTEÚDO DA PÁGINA -->
+      <main>
+        <div class="card">
+          <div class="row" style="align-items:end;gap:16px">
+            <div><label for="periodoRelatorio">Período de referência</label>
+              <select id="periodoRelatorio"><option >Janeiro de 2026</option><option >Fevereiro de 2026</option><option >Março de 2026</option><option >Abril de 2026</option><option >Maio de 2026</option><option >Junho de 2026</option><option >Julho de 2026</option><option >Agosto de 2026</option><option >Setembro de 2026</option><option selected>Outubro de 2026</option><option >Novembro de 2026</option><option >Dezembro de 2026</option></select></div>
+            <button class="btn" id="baixarSalarios" type="button">⬇ Baixar folha salarial (Excel)</button>
+          </div>
+          <p style="color:var(--muted)">Simulação com INSS e IRRF consultados na API FalaZuki. Valores pendentes não são estimados. Não utilizar como folha oficial.</p>
+        </div>
+        <div class="grid g4" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+          <div class="card kpi"><b id="qtd">0</b><span>Funcionários lançados</span></div>
+          <div class="card kpi"><b id="total">R$ 0,00</b><span>Total calculado</span></div>
+          <div class="card kpi"><b id="pendentes">0</b><span>Sem lançamento (cadastro demonstrativo)</span></div>
+        </div>
+        <div class="card" style="margin-top:16px"><h2>Resultado do processamento salarial</h2>
+          <div class="tw"><table><thead><tr><th>ID</th><th>Funcionário</th><th>Salário-base</th><th>HE 50%</th><th>HE 100%</th><th>Desconto faltas</th><th>Bruto ajustado</th><th>INSS</th><th>IRRF</th><th>VT/outros</th><th>Líquido estimado</th><th>Status</th></tr></thead>
+          <tbody id="resultadoSalarios"><tr><td colspan="12">Carregando...</td></tr></tbody></table></div>
+        </div>
+      </main>
+    </div>
+  </div>
+<script>
+const moeda = valor => Number(valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const periodo = document.getElementById('periodoRelatorio');
+async function carregarSalarios(){
+ const tbody=document.getElementById('resultadoSalarios'); tbody.replaceChildren();
+ try {
+  const resposta=await fetch('/api/salarios?periodo='+encodeURIComponent(periodo.value));
+  const dados=await resposta.json(); if(!resposta.ok) throw new Error(dados.erro || 'Falha na consulta');
+  document.getElementById('qtd').textContent=dados.length;
+  document.getElementById('total').textContent=moeda(dados.reduce((s,d)=>s+(d.salario_calculado ?? 0),0));
+  document.getElementById('pendentes').textContent=Math.max(0,6-dados.length);
+  if(!dados.length){const tr=tbody.insertRow();const td=tr.insertCell();td.colSpan=8;td.textContent='Nenhum lançamento para este período.';return;}
+  for(const d of dados){const tr=tbody.insertRow();
+   for(const valor of [d.id,d.nome,moeda(d.salario_base),moeda(d.valor_he50),moeda(d.valor_he100),moeda(d.desconto_faltas),moeda(d.bruto_ajustado),d.inss == null ? "—" : moeda(d.inss),d.irrf == null ? "—" : moeda(d.irrf),moeda(d.vale_transporte+d.outros_descontos),d.salario_calculado == null ? "Pendente" : moeda(d.salario_calculado),d.status]){
+    const td=tr.insertCell();td.textContent=valor;
+   }
+  }
+ }catch(e){const tr=tbody.insertRow();const td=tr.insertCell();td.colSpan=8;td.textContent='Erro: '+e.message;}
+}
+periodo.addEventListener('change',carregarSalarios);
+document.getElementById('baixarSalarios').addEventListener('click',async ()=>{
+ try{
+  const resposta=await fetch('/api/exportar-salarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({periodo:periodo.value})});
+  if(!resposta.ok){const e=await resposta.json();throw new Error(e.erro || 'Falha ao exportar');}
+  const blob=await resposta.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;
+  a.download='folha_salarial_'+periodo.value.replaceAll(' ','_')+'.xlsx';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ }catch(e){alert('Não foi possível exportar: '+e.message);}
+});
+carregarSalarios();
+</script>
+</body>
+
+</html>

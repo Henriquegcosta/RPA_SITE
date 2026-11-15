@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registros de ponto · Pão D’Ouro RH</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- MENU LATERAL (igual em todas as páginas) -->
+    <aside>
+      <div class="brand"><i>🥖</i>Pão D’Ouro</div>
+      <nav><a href="index.html" class="on"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v5l4 2-1 1.7-5-2.7V7z" />
+          </svg>Registros de ponto</a><a href="folha.html"><svg viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path d="M4 4h16v4H4zm0 6h10v10H4zm12 0h4v10h-4z" />
+          </svg>Processamento da folha</a><a href="relatorios.html"><svg viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path d="M6 2h9l5 5v15H6zm8 1.5V8h4.5zM8 12h8v1.5H8zm0 4h8v1.5H8z" />
+          </svg>Relatórios</a><a href="pendencias.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2L1 21h22zm1 15h-2v-2h2zm0-4h-2V9h2z" />
+          </svg>Logs</a></nav>
+    </aside>
+
+    <div>
+      <!-- CABEÇALHO -->
+      <header>
+        <h1>Registros de ponto</h1>
+        <small>Pão D’Ouro · RH</small>
+      </header>
+
+      <!-- CONTEÚDO DA PÁGINA -->
+      <main>
+        <div class="card">
+          <!-- SELEÇÃO DO MÊS + BOTÃO DE DOWNLOAD -->
+          <div class="row">
+            <div style="min-width:220px"><label for="mesPonto">Mês de referência</label><select id="mesPonto"
+                name="mesPonto">
+                <option>Janeiro de 2026</option>
+                <option>Fevereiro de 2026</option>
+                <option>Março de 2026</option>
+                <option>Abril de 2026</option>
+                <option>Maio de 2026</option>
+                <option>Junho de 2026</option>
+                <option>Julho de 2026</option>
+                <option>Agosto de 2026</option>
+                <option>Setembro de 2026</option>
+                <option selected>Outubro de 2026</option>
+                <option>Novembro de 2026</option>
+                <option>Dezembro de 2026</option>
+              </select></div>
+            <button class="btn" id="btnExportar" type="button">⬇ Baixar planilha de ponto</button>
+          </div>
+          <!-- TABELA DE EXEMPLO -->
+          <h2>Exemplo de registros</h2>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Funcionário</th>
+                  <th>Data</th>
+                  <th>Entrada</th>
+                  <th>Saída almoço</th>
+                  <th>Volta almoço</th>
+                  <th>Saída</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ana Souza</td>
+                  <td>01/10/2026</td>
+                  <td>06:00</td>
+                  <td>12:10</td>
+                  <td>13:10</td>
+                  <td>15:30</td>
+                </tr>
+                <tr>
+                  <td>Bruno Lima</td>
+                  <td>02/10/2026</td>
+                  <td>07:01</td>
+                  <td>12:13</td>
+                  <td>13:13</td>
+                  <td>16:31</td>
+                </tr>
+                <tr>
+                  <td>Carla Mendes</td>
+                  <td>03/10/2026</td>
+                  <td>08:02</td>
+                  <td>12:16</td>
+                  <td>13:16</td>
+                  <td>17:32</td>
+                </tr>
+                <tr>
+                  <td>Diego Alves</td>
+                  <td>04/10/2026</td>
+                  <td>06:03</td>
+                  <td>12:19</td>
+                  <td>13:19</td>
+                  <td>15:33</td>
+                </tr>
+                <tr>
+                  <td>Elaine Costa</td>
+                  <td>05/10/2026</td>
+                  <td>07:04</td>
+                  <td>12:22</td>
+                  <td>13:22</td>
+                  <td>16:34</td>
+                </tr>
+                <tr>
+                  <td>Fábio Rocha</td>
+                  <td>06/10/2026</td>
+                  <td>08:05</td>
+                  <td>12:25</td>
+                  <td>13:25</td>
+                  <td>17:35</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+document.getElementById("btnExportar").addEventListener("click", async () => {
+  const botao = document.getElementById("btnExportar");
+  const mes = document.getElementById("mesPonto").value;
+  botao.disabled = true;
+  botao.textContent = "Gerando planilha...";
+  try {
+    const resposta = await fetch("/api/exportar", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({mes})
+    });
+    if (!resposta.ok) {
+      const erro = await resposta.json().catch(() => ({erro: "Falha ao gerar relatório"}));
+      throw new Error(erro.erro || "Falha ao gerar relatório");
+    }
+    const blob = await resposta.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio_ponto_${mes.replaceAll(" ", "_")}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (erro) {
+    alert("Não foi possível exportar: " + erro.message);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "⬇ Baixar planilha de ponto";
+  }
+});
+</script>
+
+</body>
+
+</html>
